@@ -1,0 +1,132 @@
+#:coding=utf-8:
+import os
+import logging
+import string
+import random
+import ujson
+import tornado.web
+import tornado.websocket
+from packets import chat_sent
+from plugins.core.player_manager import permissions, PlayerManager, UserLevels
+from plugins.core.player_manager.manager import Player
+from tornado.ioloop import PeriodicCallback
+from base_plugin import BasePlugin
+
+
+class BaseHandler(tornado.web.RequestHandler):
+
+    def get_current_user(self):
+        print self.request
+        return self.get_secure_cookie("player")
+
+
+class LoginHandler(BaseHandler):
+
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        login_user = self.player_manager.get_by_name(self.get_argument("name"))
+
+        if login_user is None or self.get_argument("password") != self.settings.get("ownerpassword"):
+            self.redirect("/login")
+        else:
+            self.set_secure_cookie("player", self.get_argument("name"))
+            self.redirect("/index.html")
+
+
+class IndexHandler(BaseHandler):
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        self.playerlist = self.player_manager.session.query(Player).all()
+        for player in self.playerlist:
+            print player.as_dict()
+        self.render("index.html")
+
+class ContactHandler(BaseHandler):
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(request):
+        request.render("contact.html")
+
+
+class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
+    clients = []
+
+    def open(self, *args):
+        self.clients.append(self)
+        self.messages = self.settings.get("messages")
+        self.callback = PeriodicCallback(self.update_chat, 500)
+        self.callback.start()
+
+    def on_message(self, message):
+        messagejson = ujson.loads(message)
+        player = self.get_secure_cookie("player")
+        factory = self.settings.get("factory")
+
+        self.messages.add(message)
+        factory.broadcast(messagejson["message"], 0, "", player)
+
+    def on_chat_sent(self, data):
+        parsed = chat_sent().parse(data.data)
+        message = parsed.message.decode("utf-8")
+        for client in self.clients:
+            client.write_message(message)
+
+    def update_chat(self):
+        if len(self.messages) > 0:
+            for message in self.messages:
+                for client in self.clients:
+                    client.write_message(message)
+            self.messages.clear()
+
+    def on_close(self):
+        self.clients.remove(self)
+        self.callback.stop()
+
+
+class WebGuiApp(tornado.web.Application):
+    def __init__(self, port, ownerpassword, playermanager, factory, messages):
+        chars = string.ascii_letters + string.digits
+        random.seed(os.urandom(1024))
+        cookiestring = "".join(random.choice(chars) for i in range(64))
+        logging.getLogger('tornado.general').addHandler(logging.FileHandler("webgui.log"))
+        logging.getLogger('tornado.application').addHandler(logging.FileHandler("webgui.log"))
+        logging.getLogger('tornado.access').addHandler(logging.FileHandler("webgui_access.log"))
+
+        handlers = [
+            (r"/login", LoginHandler),
+            (r'/chat', WebSocketChatHandler),
+            (r'/contact.html', ContactHandler),
+            (r'/index.html', IndexHandler),
+            (r'/', IndexHandler),
+            (r'/style/(.*)', tornado.web.StaticFileHandler,
+             {'path': os.path.join(os.path.dirname(__file__), 'style')}),
+            (r'/css/(.*)', tornado.web.StaticFileHandler,
+             {'path': os.path.join(os.path.dirname(__file__), 'static/css')}),
+            (r'/js/(.*)', tornado.web.StaticFileHandler,
+             {'path': os.path.join(os.path.dirname(__file__), 'static/js')}),
+            (r'/images/(.*)', tornado.web.StaticFileHandler,
+             {'path': os.path.join(os.path.dirname(__file__), 'static/images')})
+        ]
+        settings = dict(
+            template_path=os.path.join(os.path.dirname(__file__), "static"),
+            cookie_secret=cookiestring,
+            login_url="/login",
+            xsrf_cookies=True,
+            debug=True,
+            ownerpassword=ownerpassword,
+            playermanager=playermanager,
+            factory=factory,
+            messages=messages,
+        )
+        tornado.web.Application.__init__(self, handlers, **settings)
+        self.listen(port)

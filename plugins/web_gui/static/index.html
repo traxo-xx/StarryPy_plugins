@@ -70,7 +70,17 @@
             else {
                 messageContainer.appendChild(createChatEntry(msgdate, "[SYSTEM]", "WebSocket is NOT supported by your browser!"));
             }
+        };
+
+        function confirmAction(action) {
+            var agree=confirm("Are you sure you want to " + action + " the server?");
+            return (agree)
         }
+
+        function stopServer() {
+            if (confirmAction("stop")) window.open("/stopserver","_self")
+        }
+
     </script>
 
 <title>StarryPy WebGUI</title>
@@ -93,7 +103,7 @@
 			<li><a href="index.html">Downloads</a></li>
 			<li><a href="index.html">Support</a></li>
 			<li><a href="index.html">About</a></li>
-			<li><a href="login">Login</a></li>
+			<li><a href="logout">Logout</a></li>
 		</ul>		
 			
 	
@@ -107,73 +117,33 @@
 		<div id="sidebar" >
 		
 			<div class="sidebox">
-			
-				<h1>Short About</h1>
 				
-				<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec libero. Suspendisse bibendum. 
-				Cras id urna. Morbi tincidunt, orci ac convallis aliquam, lectus turpis varius lorem, eu 
-				posuere nunc justo tempus leo.</p>	
+				<table>
+                    {% set row_count = 1 %}
+					<tr>
+						<th class="first"><strong>Players online: {{ len(handler.playerlistonline) }}</strong></th>
+					</tr>
+                    {% for player in handler.playerlistonline %}
+                        {% set row_class = "row-a" if bool(row_count & 1) else "row-b" %}
+					<tr class="{{ row_class }}">
+						<td class="first">{{ player.as_dict()["name"] }}</td>
+					</tr>
+                        {% set row_count +=1 %}
+                    {% end %}
+				</table>
 						
-			</div>			
+			</div>
 
-			<div class="sidebox">	
-			
-				<h1 class="clear">Sidebar Menu</h1>
-				<ul class="sidemenu">
-					<li><a href="index.html" class="top">Home</a></li>
-					<li><a href="#TemplateInfo">Template Info</a></li>
-					<li><a href="#SampleTags">Sample Tags</a></li>
-					<li><a href="http://www.styleshout.com/">More Templates</a></li>
-					<li><a href="http://www.dreamtemplate.com" title="Web Templates">Web Templates</a></li>
-				</ul>	
-				
-			</div>	
-			
-			<div class="sidebox">	
-			
-				<h1>Sponsors</h1>
-                <ul class="sidemenu">
-                    <li><a href="http://www.dreamtemplate.com" title="Website Templates" class="top">DreamTemplate</a></li>
-                    <li><a href="http://www.themelayouts.com" title="WordPress Themes">ThemeLayouts</a></li>
-                    <li><a href="http://www.imhosted.com" title="Website Hosting">ImHosted.com</a></li>
-                    <li><a href="http://www.dreamstock.com" title="Stock Photos">DreamStock</a></li>
-                    <li><a href="http://www.evrsoft.com" title="Website Builder">Evrsoft</a></li>
-                    <li><a href="http://www.webhostingwp.com" title="Web Hosting">Web Hosting</a></li>
-                </ul>
-				
-			</div>
-			
-			<div class="sidebox">	
-			
-				<h1>Wise Words</h1>
-				<p>&quot;No man can live happily who regards himself alone; 
-				who turns everything to his own advantage. You must live for
-				others if you wish to live for yourself.&quot;</p>					
-				<p class="align-right">- Seneca</p>
-					
-			</div>		
-			
 			<div class="sidebox">
-			
-				<h1>Support Styleshout</h1>
-				<p>If you are interested in supporting my work and would like to contribute, you are
-				welcome to make a small donation through the 
-				<a href="http://www.styleshout.com/">donate link</a> on my website - it will 
-				be a great help and will surely be appreciated.</p>			
-				
+
+				<h1 class="clear">Admin Actions</h1>
+				<ul class="sidemenu">
+					<li><button class="button" onclick="stopServer()">Stop StarryPy</button></li><br>
+					<li><button class="button" onclick="stopServer()">Restart Server</button></li>
+				</ul>
+
 			</div>
-			
-			<div class="sidebox">	
-						
-				<h1>Search Box</h1>	
-				<form action="#" class="searchform">
-					<p>
-					<input name="search_query" class="textbox" type="text" />
-  					<input name="search" class="button" value="Search" type="submit" />
-					</p>			
-				</form>			
-				
-			</div>
+
 					
 		</div>	
 	
@@ -187,42 +157,34 @@
 
                 <div id="chat" style="width: 100%; height: 40em; overflow: auto; font-family: Arial"></div>
                 <div id="input_area">
-                <input class="search" id="username" type="text" placeholder="Your username" style="display: block; width: 200px">
-                <textarea class="search" id="message" placeholder="Your message" style="display: block; width: 400px"></textarea>
-                <button class="subscribe" onclick="sendMessage()" style="display: block">Send</button>
+                <input id="username" type="hidden" value="{{ handler.current_user }}">
+                <input class="search" type="text" id="message" placeholder="Your message" style="display: block; width: 400px" onkeydown="if(event.keyCode==13){sendMessage()}">
+                <button class="button" onclick="sendMessage()" style="display: block">Send</button>
                 </div>
 				
 			</div>
 
 				
-				<h3>Table Styling</h3>
+				<h3>Player List</h3>
 							
 					<table>
+                    {% set row_count = 1 %}
 					<tr>
-						<th class="first"><strong>post</strong> date</th>
-						<th>title</th>
-						<th>description</th>
+						<th class="first"><strong>post</strong> name</th>
+						<th>Planet</th>
+						<th>Access Level</th>
+						<th>Last Seen</th>
 					</tr>
-					<tr class="row-a">
-						<td class="first">05.31.2006</td>
-						<td><a href="index.html">Augue non nibh</a></td>
-						<td><a href="index.html">Lobortis commodo metus vestibulum</a></td>
+                    {% for player in handler.playerlist %}
+                        {% set row_class = "row-a" if bool(row_count & 1) else "row-b" %}
+					<tr class="{{ row_class }}">
+						<td class="first">{{ player.as_dict()["name"] }}</td>
+						<td><a href="index.html">{{ player.as_dict()["planet"] }}</a></td>
+						<td><a href="index.html">{{ player.as_dict()["access_level"] }}</a></td>
+						<td><a href="index.html">{{ player.as_dict()["last_seen"] }}</a></td>
 					</tr>
-					<tr class="row-b">
-						<td class="first">05.31.2006</td>
-						<td><a href="index.html">Fusce ut diam bibendum</a></td>
-						<td><a href="index.html">Purus in eget odio in sapien</a></td>
-					</tr>
-					<tr class="row-a">
-						<td class="first">05.31.2006</td>
-						<td><a href="index.html">Maecenas et ipsum</a></td>
-						<td><a href="index.html">Adipiscing blandit quisque eros</a></td>
-					</tr>
-					<tr class="row-b">
-						<td class="first">05.31.2006</td>
-						<td><a href="index.html">Sed vestibulum blandit</a></td>
-						<td><a href="index.html">Cras lobortis commodo metus lorem</a></td>
-					</tr>
+                        {% set row_count +=1 %}
+                    {% end %}
 					</table>
 				
 				<br />				

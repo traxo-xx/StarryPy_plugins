@@ -28,7 +28,12 @@
 		
 		<!-- Menu Tabs -->
 		<ul>
-			<li><a href="login" id="current">Login</a></li>
+			<li><a href="index.html">Home</a></li>
+			<li><a href="index.html">News</a></li>
+			<li><a href="index.html">Downloads</a></li>
+			<li><a href="index.html">Support</a></li>
+			<li><a href="index.html">About</a></li>			
+			<li><a href="login">Login</a></li>
 		</ul>
 			
 	
@@ -40,30 +45,19 @@
 	<div id="content-wrap"><div id="content">		
 		
 		<div id="sidebar" >
+
+				<span style="text-align: left;font-size: large;font-weight: bolder">Server is being stopped!</span>
 					
 		</div>	
 	
-		<div id="main">		
-		
-			<div class="post">
-			
-				<a name="Login"></a>
-				<h1>Login</h1>
+		<div id="main">
 
-                <form action="/login" method="post">
-                    Name: <input type="text" name="name"><br>
-                    Password: <input type="password" name="password"><br>
-                    <input class="subscribe" type="submit" value="Sign in">
-                    {% if handler.failed_login %}
-                        <span style="color: #ff3a35">Login failed.</span>
-                    {% end %}
-                    {% raw xsrf_form_html() %}
-                </form>
-				
+			<div>
+
 			</div>
 										
 		</div>					
-		
+
 	<!-- content-wrap ends here -->		
 	</div></div>
 

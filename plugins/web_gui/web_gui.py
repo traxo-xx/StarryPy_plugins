@@ -1,11 +1,10 @@
 #:coding=utf-8:
 import os
 import logging
-import string
-import random
 import ujson
 import tornado.web
 import tornado.websocket
+from twisted.internet import reactor
 from packets import chat_sent
 from plugins.core.player_manager import permissions, PlayerManager, UserLevels
 from plugins.core.player_manager.manager import Player
@@ -16,46 +15,63 @@ from base_plugin import BasePlugin
 class BaseHandler(tornado.web.RequestHandler):
 
     def get_current_user(self):
-        print self.request
         return self.get_secure_cookie("player")
 
 
 class LoginHandler(BaseHandler):
 
     def initialize(self):
+        self.failed_login = False
         self.player_manager = self.settings.get("playermanager")
 
     def get(self):
         self.render("login.html")
 
     def post(self):
-        login_user = self.player_manager.get_by_name(self.get_argument("name"))
+        self.login_user = self.player_manager.get_by_name(self.get_argument("name"))
 
-        if login_user is None or self.get_argument("password") != self.settings.get("ownerpassword"):
-            self.redirect("/login")
+        if self.login_user is None or self.get_argument("password") != self.settings.get("ownerpassword"):
+            self.failed_login = True
+            self.render("login.html")
         else:
             self.set_secure_cookie("player", self.get_argument("name"))
-            self.redirect("/index.html")
+            self.failed_login = False
+            self.redirect(self.get_argument("next", "/"))
+
+
+class LogoutHandler(BaseHandler):
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(request):
+        request.clear_cookie("player")
+        request.redirect("/login")
 
 
 class IndexHandler(BaseHandler):
     def initialize(self):
         self.player_manager = self.settings.get("playermanager")
 
-
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(self):
-        self.playerlist = self.player_manager.session.query(Player).all()
-        for player in self.playerlist:
-            print player.as_dict()
+        self.playerlist = self.player_manager.all()
+        self.playerlistonline = self.player_manager.who()
         self.render("index.html")
+
 
 class ContactHandler(BaseHandler):
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(request):
         request.render("contact.html")
+
+
+class AdminStopHandler(BaseHandler):
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(request):
+        request.render("adminstop.html")
+        reactor.stop()
 
 
 class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
@@ -75,12 +91,6 @@ class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
         self.messages.add(message)
         factory.broadcast(messagejson["message"], 0, "", player)
 
-    def on_chat_sent(self, data):
-        parsed = chat_sent().parse(data.data)
-        message = parsed.message.decode("utf-8")
-        for client in self.clients:
-            client.write_message(message)
-
     def update_chat(self):
         if len(self.messages) > 0:
             for message in self.messages:
@@ -94,17 +104,16 @@ class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
 
 
 class WebGuiApp(tornado.web.Application):
-    def __init__(self, port, ownerpassword, playermanager, factory, messages):
-        chars = string.ascii_letters + string.digits
-        random.seed(os.urandom(1024))
-        cookiestring = "".join(random.choice(chars) for i in range(64))
+    def __init__(self, port, ownerpassword, playermanager, factory, messages, cookie_secret):
         logging.getLogger('tornado.general').addHandler(logging.FileHandler("webgui.log"))
         logging.getLogger('tornado.application').addHandler(logging.FileHandler("webgui.log"))
         logging.getLogger('tornado.access').addHandler(logging.FileHandler("webgui_access.log"))
 
         handlers = [
             (r"/login", LoginHandler),
+            (r"/logout", LogoutHandler),
             (r'/chat', WebSocketChatHandler),
+            (r'/stopserver', AdminStopHandler),
             (r'/contact.html', ContactHandler),
             (r'/index.html', IndexHandler),
             (r'/', IndexHandler),
@@ -119,7 +128,7 @@ class WebGuiApp(tornado.web.Application):
         ]
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "static"),
-            cookie_secret=cookiestring,
+            cookie_secret=cookie_secret,
             login_url="/login",
             xsrf_cookies=True,
             debug=True,

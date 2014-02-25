@@ -5,7 +5,6 @@ import ujson
 import tornado.web
 import tornado.websocket
 from twisted.internet import reactor
-from packets import chat_sent
 from plugins.core.player_manager import permissions, PlayerManager, UserLevels
 from plugins.core.player_manager.manager import Player
 from tornado.ioloop import PeriodicCallback
@@ -75,12 +74,15 @@ class AdminStopHandler(BaseHandler):
 
 
 class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
-    clients = []
+
+    def initialize(self):
+        self.clients = []
+        #self.messages = set()
+        self.messages = self.settings.get("messages")
+        self.callback = PeriodicCallback(self.update_chat, 500)
 
     def open(self, *args):
         self.clients.append(self)
-        self.messages = self.settings.get("messages")
-        self.callback = PeriodicCallback(self.update_chat, 500)
         self.callback.start()
 
     def on_message(self, message):
@@ -104,7 +106,7 @@ class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
 
 
 class WebGuiApp(tornado.web.Application):
-    def __init__(self, port, ownerpassword, playermanager, factory, messages, cookie_secret):
+    def __init__(self, port, ownerpassword, playermanager, factory, cookie_secret, serverurl, messages):
         logging.getLogger('tornado.general').addHandler(logging.FileHandler("webgui.log"))
         logging.getLogger('tornado.application').addHandler(logging.FileHandler("webgui.log"))
         logging.getLogger('tornado.access').addHandler(logging.FileHandler("webgui_access.log"))
@@ -135,7 +137,9 @@ class WebGuiApp(tornado.web.Application):
             ownerpassword=ownerpassword,
             playermanager=playermanager,
             factory=factory,
-            messages=messages,
+            wsport=port,
+            serverurl=serverurl,
+            messages=messages
         )
         tornado.web.Application.__init__(self, handlers, **settings)
         self.listen(port)

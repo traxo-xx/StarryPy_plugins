@@ -4,7 +4,9 @@ import string
 import random
 from base_plugin import BasePlugin
 from plugins.core.player_manager import permissions, PlayerManager, UserLevels
+from packets import chat_sent
 import web_gui
+from websocket import create_connection
 import tornado.ioloop
 from tornado.platform.twisted import TwistedIOLoop
 TwistedIOLoop().install()
@@ -25,15 +27,16 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
             self.cookie_token = self.config.plugin_config['cookie_token'] = self.generate_cookie_token()
         else:
             self.cookie_token = self.config.plugin_config['cookie_token']
-        self.websocket = web_gui.WebSocketChatHandler
-        self.chatmessages = set()
+        self.serverurl = self.config.plugin_config['serverurl']
+        self.messages = set()
 
     def activate(self):
         super(WebGuiPlugin, self).activate()
         self.player_manager = self.plugins['player_manager'].player_manager
         self.web_gui_app = web_gui.WebGuiApp(port=self.port, ownerpassword=self.ownerpassword,
                                              playermanager=self.player_manager, factory=self.factory,
-                                             messages=self.chatmessages, cookie_secret=self.cookie_token)
+                                             cookie_secret=self.cookie_token, serverurl=self.serverurl,
+                                             messages=self.messages)
         self.logger.info("WebGUI listening on port {p}".format(p=self.port))
         self.gui_instance = tornado.ioloop.IOLoop.instance()
 
@@ -48,6 +51,15 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
 
     def on_chat_sent(self, data):
         parsed = chat_sent().parse(data.data)
+        print parsed.message.decode("utf-8")
         message = parsed.message.decode("utf-8")
-        self.chatmessages.add(message)
+        #message = {"msgdate": "text", "author": "test", "message": parsed.message.decode("utf-8")}
+        self.messages.add(message)
+
+        # print "ws://localhost:{p}/chat".format(p=self.port)
+        # ws = create_connection("ws://localhost:{p}/chat".format(p=self.port))
+        # result = ws.send(message)
+        # print "Received '%s'" % result
+        # ws.close()
+        return True
 

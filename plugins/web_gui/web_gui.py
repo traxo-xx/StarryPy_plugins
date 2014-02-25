@@ -110,6 +110,7 @@ class AdminStopHandler(BaseHandler):
     @tornado.web.asynchronous
     def get(self):
         if self.web_gui_user.access_level == self.levels["OWNER"]:
+            self.error_message = ""
             self.render("adminstop.html")
             reactor.stop()
         else:

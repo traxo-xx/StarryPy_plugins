@@ -33,6 +33,36 @@ Please note:
 ## [SloanReynolds /who on login](https://github.com/MrMarvin/StarryPy_plugins/blob/master/plugins/loginwho_plugin)
 > Displays a /who upon login
 
+## [FZFalzar's BetterWhisper plugin](https://github.com/FZFalzar/StarryPy_plugins/tree/brutus_whisper/plugins/brutus_whisper)
+> Brings better functionality for the sending of Private Messages in Starbound
+> Adds the following commands and abilities to the server:
+>```
+@permissions(UserLevels.GUEST)
+/w <name> <message> 			#Sends a PM to target. Overrides default /w functionality. alias is /whisper
+/r <message>      				#Replies to the last person who you received a PM from
+@permissions(UserLevels.ADMIN)
+/socialspy <on|true|off|false>	#Enables/Disables SocialSpy, a feature for admins to receive PMs sent by anyone, for policing purposes
+>```
+
+## [FZFalzar's /afk plugin](https://github.com/FZFalzar/StarryPy_plugins/tree/afk_plugin/plugins/afk_plugin)
+> Simple plugin that allows players to set their status via /afk.
+> Player will be automatically unmarked from AFK if they chat or interact with any entity (doors, chests etc).
+> Currently does not allow auto-afk or un-afk upon player movement due to API deficiency.
+>```
+@permissions(UserLevels.GUEST)
+/afk							#Enables/disables AFK status
+>```
+
+> ### Add the following block to your config file:
+
+>```
+"afk_plugin": {
+    "afk_msg": "is now AFK",
+    "afkreturn_msg": "has returned",
+	"auto_activate": true
+    }
+>```
+
 ## [Maffi's uptime plugin](https://github.com/MrMarvin/StarryPy_plugins/blob/master/plugins/uptime)
 > Very simple plugin that responds to /uptime with the time StarryPy is running.
 
@@ -43,7 +73,7 @@ Please note:
 > Adds /starteritems command which can be used once per player and will give player a set of predefined starter items
 > It is ment to work along with new_player_greeter_plugin, and will give a different set, that's why:
 
-### Add the following block to your config file:
+> ### Add the following block to your config file:
 
 >```
 "starteritems_plugin": {
@@ -75,7 +105,7 @@ Please note:
 > - Avoid sending notifications for ignored players.
 > Pushover supports delivery groups, so one could send messages to multiple users. This can be useful when running a private server so that you know when other players are online.
 
-### Add the following block to your config file:
+> ### Add the following block to your config file:
 
 > ```
 "pushover_plugin": {
@@ -106,7 +136,7 @@ Please note:
 ## [traxo-xx's Notify My Android plugin](https://github.com/StarryPy/StarryPy_plugins/tree/master/plugins/nma_plugin)
 > If activated, this plugin will send a notification to your [Notify My Android](https://www.notifymyandroid.com/) account.
 
-### Add the following block to your config file:
+> ### Add the following block to your config file:
 
 > ```javascript
         "nma_plugin": {

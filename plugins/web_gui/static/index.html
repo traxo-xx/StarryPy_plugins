@@ -50,7 +50,7 @@
 
         function sendMessage() {
             var d = new Date();
-            var data = { msgdate: "[" + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds() + "]",
+            var data = { msgdate: "[" + twoDigits(d.getHours()) + ":" + twoDigits(d.getMinutes()) + ":" + twoDigits(d.getSeconds()) + "]",
                 author: document.getElementById("username").value,
                 message: document.getElementById("message").value };
 
@@ -61,7 +61,7 @@
 
         window.onload = function () {
             var d = new Date();
-            var msgdate = "[" + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds() + "]";
+            var msgdate = "[" + twoDigits(d.getHours()) + ":" + twoDigits(d.getMinutes()) + ":" + twoDigits(d.getSeconds()) + "]";
             var messageContainer = document.getElementById("chat");
             if ("WebSocket" in window) {
                 messageContainer.appendChild(createChatEntry(msgdate, "[SYSTEM]", "WebSocket is supported by your browser!"));
@@ -73,12 +73,16 @@
         };
 
         function confirmAction(action) {
-            var agree=confirm("Are you sure you want to " + action + " the server?");
+            var agree=confirm("Are you sure you want to " + action + "?");
             return (agree)
         }
 
         function stopServer() {
-            if (confirmAction("stop")) window.open("/stopserver","_self")
+            if (confirmAction("stop the server")) window.open("/stopserver","_self")
+        }
+
+        function twoDigits(n){
+            return n<10? '0'+n:''+n;
         }
 
     </script>
@@ -99,7 +103,7 @@
 		<!-- Menu Tabs -->
 		<ul>
 			<li><a href="index.html" id="current">Home</a></li>
-			<li><a href="index.html">News</a></li>
+			<li><a href="playerlist.html">Player List</a></li>
 			<li><a href="index.html">Downloads</a></li>
 			<li><a href="index.html">Support</a></li>
 			<li><a href="index.html">About</a></li>
@@ -163,31 +167,6 @@
                 </div>
 				
 			</div>
-
-				
-				<h3>Player List</h3>
-							
-					<table>
-                    {% set row_count = 1 %}
-					<tr>
-						<th class="first"><strong>post</strong> name</th>
-						<th>Planet</th>
-						<th>Access Level</th>
-						<th>Last Seen</th>
-					</tr>
-                    {% for player in handler.playerlist %}
-                        {% set row_class = "row-a" if bool(row_count & 1) else "row-b" %}
-					<tr class="{{ row_class }}">
-						<td class="first">{{ player.as_dict()["name"] }}</td>
-						<td><a href="index.html">{{ player.as_dict()["planet"] }}</a></td>
-						<td><a href="index.html">{{ player.as_dict()["access_level"] }}</a></td>
-						<td><a href="index.html">{{ player.as_dict()["last_seen"] }}</a></td>
-					</tr>
-                        {% set row_count +=1 %}
-                    {% end %}
-					</table>
-				
-				<br />				
 										
 		</div>					
 		

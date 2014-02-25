@@ -41,9 +41,9 @@ class LoginHandler(BaseHandler):
 class LogoutHandler(BaseHandler):
     @tornado.web.authenticated
     @tornado.web.asynchronous
-    def get(request):
-        request.clear_cookie("player")
-        request.redirect("/login")
+    def get(self):
+        self.clear_cookie("player")
+        self.redirect("/login")
 
 
 class IndexHandler(BaseHandler):
@@ -53,24 +53,68 @@ class IndexHandler(BaseHandler):
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(self):
-        self.playerlist = self.player_manager.all()
         self.playerlistonline = self.player_manager.who()
         self.render("index.html")
 
 
-class ContactHandler(BaseHandler):
+class PlayerListHandler(BaseHandler):
+
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+        self.playerlist = self.player_manager.all()
+
     @tornado.web.authenticated
     @tornado.web.asynchronous
-    def get(request):
-        request.render("contact.html")
+    def get(self):
+        self.render("playerlist.html")
+
+
+class PlayerEditHandler(BaseHandler):
+
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+        self.levels = UserLevels.ranks
+        self.web_gui_user = self.player_manager.get_by_name(self.get_secure_cookie("player"))
+        self.edit_player = self.player_manager.get_by_name(self.get_argument("playername"))
+        self.edit_player_dict = self.edit_player.as_dict()
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        try:
+            self.error_message = self.get_argument("error_message")
+        except tornado.web.MissingArgumentError:
+            self.error_message = ""
+        self.render("playeredit.html")
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def post(self):
+        if self.web_gui_user.access_level > self.edit_player.access_level:
+            self.edit_player.access_level = self.get_argument("access_level")
+        else:
+            error_message = "You are not allowed to change this users' data!"
+            self.redirect("playeredit.html?playername={n}&error_message={e}".format(n=self.get_argument("playername"),
+                                                                                    e=error_message))
+        self.redirect("playeredit.html?playername={n}".format(n=self.get_argument("playername")))
 
 
 class AdminStopHandler(BaseHandler):
+
+    def initialize(self):
+        self.levels = UserLevels.ranks
+        self.player_manager = self.settings.get("playermanager")
+        self.web_gui_user = self.player_manager.get_by_name(self.get_secure_cookie("player"))
+
     @tornado.web.authenticated
     @tornado.web.asynchronous
-    def get(request):
-        request.render("adminstop.html")
-        reactor.stop()
+    def get(self):
+        if self.web_gui_user.access_level == self.levels["OWNER"]:
+            self.render("adminstop.html")
+            reactor.stop()
+        else:
+            self.error_message = "Only owners can stop the server!"
+            self.render("adminstop.html")
 
 
 class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
@@ -116,7 +160,8 @@ class WebGuiApp(tornado.web.Application):
             (r"/logout", LogoutHandler),
             (r'/chat', WebSocketChatHandler),
             (r'/stopserver', AdminStopHandler),
-            (r'/contact.html', ContactHandler),
+            (r'/playerlist.html', PlayerListHandler),
+            (r'/playeredit.html', PlayerEditHandler),
             (r'/index.html', IndexHandler),
             (r'/', IndexHandler),
             (r'/style/(.*)', tornado.web.StaticFileHandler,

@@ -29,11 +29,11 @@
 		<!-- Menu Tabs -->
 		<ul>
 			<li><a href="index.html">Home</a></li>
-			<li><a href="index.html">News</a></li>
+			<li><a href="playerlist.html" id="current">Player List</a></li>
 			<li><a href="index.html">Downloads</a></li>
 			<li><a href="index.html">Support</a></li>
-			<li><a href="index.html">About</a></li>			
-			<li><a href="login">Login</a></li>
+			<li><a href="index.html">About</a></li>
+			<li><a href="logout">Logout</a></li>
 		</ul>
 			
 	
@@ -42,26 +42,46 @@
 	<div class="headerphoto"></div>
 				
 	<!-- content-wrap starts here -->
-	<div id="content-wrap"><div id="content">		
-		
+	<div id="content-wrap"><div id="content">
+
 		<div id="sidebar" >
-                {% if handler.error_message == "" %}
-				<h3>Server is being stopped!</h3>
-                {% else %}
-                <h3 style="color: #ff3a35">{{ handler.error_message }}</h3>
-                {% end %}
-					
-		</div>	
+
+		</div>
 	
 		<div id="main">
 
-			<div>
+			<div class="post">
+
+
+				<h3>Player List</h3>
+
+					<table>
+                    {% set row_count = 1 %}
+					<tr>
+						<th class="first"><strong>post</strong> name</th>
+						<th>Planet</th>
+						<th>Access Level</th>
+						<th>Last Seen</th>
+					</tr>
+                    {% for player in handler.playerlist %}
+                        {% set row_class = "row-a" if bool(row_count & 1) else "row-b" %}
+					<tr class="{{ row_class }}">
+						<td class="first"><a href="playeredit.html?playername={{ player.as_dict()["name"] }}">{{ player.as_dict()["name"] }}</a></td>
+						<td>{{ player.as_dict()["planet"] }}</td>
+						<td>{{ player.as_dict()["access_level"] }}</td>
+						<td>{{ player.as_dict()["last_seen"] }}</td>
+					</tr>
+                        {% set row_count +=1 %}
+                    {% end %}
+					</table>
+
+				<br />
 
 			</div>
 										
 		</div>					
-
-	<!-- content-wrap ends here -->		
+		
+	<!-- content-wrap ends here -->
 	</div></div>
 
 <!-- footer starts here -->	

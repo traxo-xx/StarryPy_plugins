@@ -159,3 +159,32 @@ Please note:
 >
 > The other parameters are pretty self-explanatory
 
+## [traxo-xx's WebGUI plugin](https://github.com/StarryPy/StarryPy_plugins/tree/master/plugins/web_gui)
+> If activated, this give you a web-GUI to administrate your StarryPy server. Still in a very alpha-ish state, which is why it is deactivated by default. When it's activated you can log in to the GUI with the name of the server owner and the password you set in the config file.
+
+> ### Add the following block to your config file:
+
+> ```javascript
+        "web_gui": {
+            "auto_activate": false,
+            "cookie_token": "",
+            "ownerpassword": "!!PUT A PASSWORD HERE",
+            "port": 8083,
+            "remember_cookie_token": true,
+            "restart_script": "",
+            "serverurl": "localhost"
+        },
+>```
+
+> **cookie_token**: A secure token for Cookies. Leave this blank. The plugin will fill it.
+>
+> **ownerpassword**: Password for the web-GUI.
+>
+> **port**: The port the web-GUI will listen on.
+>
+> **remember_cookie_token**: If set to true, you will stay logged in until you log out (even after you restart StarryPy). If set to false, a new cookie_token will be generated on every start of StarryPy.
+>
+> **restart_script**: Path to a script to restart starbound and/or StarryPy.
+>
+> **serverurl**: URL or IP of your StarryPy server.
+

@@ -1,9 +1,10 @@
 #:coding=utf-8:
 import os
 import logging
-import ujson
+import json
 import tornado.web
 import tornado.websocket
+import subprocess
 from twisted.internet import reactor
 from plugins.core.player_manager import permissions, PlayerManager, UserLevels
 from plugins.core.player_manager.manager import Player
@@ -21,6 +22,7 @@ class LoginHandler(BaseHandler):
 
     def initialize(self):
         self.failed_login = False
+        self.factory = self.settings.get("factory")
         self.player_manager = self.settings.get("playermanager")
 
     def get(self):
@@ -34,8 +36,28 @@ class LoginHandler(BaseHandler):
             self.render("login.html")
         else:
             self.set_secure_cookie("player", self.get_argument("name"))
+            self.factory.broadcast("An admin has joined the server through Web-GUI.", 0, "", self.get_argument("name"))
             self.failed_login = False
             self.redirect(self.get_argument("next", "/"))
+
+
+class RestartHandler(BaseHandler):
+
+    def initialize(self):
+        self.levels = UserLevels.ranks
+        self.player_manager = self.settings.get("playermanager")
+        self.web_gui_user = self.player_manager.get_by_name(self.get_current_user())
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        if self.web_gui_user.access_level == self.levels["OWNER"]:
+            self.error_message = ""
+            self.render("restart.html")
+            print(subprocess.call(self.settings.get("restart_script"), shell=True))
+        else:
+            self.error_message = "Only owners can restart the server!"
+            self.render("restart.html")
 
 
 class LogoutHandler(BaseHandler):
@@ -47,14 +69,21 @@ class LogoutHandler(BaseHandler):
 
 
 class IndexHandler(BaseHandler):
-    def initialize(self):
-        self.player_manager = self.settings.get("playermanager")
 
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(self):
-        self.playerlistonline = self.player_manager.who()
+        self.user = self.get_current_user()
         self.render("index.html")
+
+
+class DashboardHandler(BaseHandler):
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        self.user = self.get_current_user()
+        self.render("ajax/dashboard.html")
 
 
 class PlayerListHandler(BaseHandler):
@@ -66,7 +95,31 @@ class PlayerListHandler(BaseHandler):
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(self):
-        self.render("playerlist.html")
+        self.render("ajax/playerlist.html")
+
+
+class PlayerOnlineSideBarHandler(BaseHandler):
+
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+        self.playerlistonline = self.player_manager.who()
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        self.render("ajax/playersonline.html")
+
+
+class PlayerOnlineListHandler(BaseHandler):
+
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+        self.playerlistonline = self.player_manager.who()
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        self.render("ajax/playerlistonline.html")
 
 
 class PlayerEditHandler(BaseHandler):
@@ -74,9 +127,8 @@ class PlayerEditHandler(BaseHandler):
     def initialize(self):
         self.player_manager = self.settings.get("playermanager")
         self.levels = UserLevels.ranks
-        self.web_gui_user = self.player_manager.get_by_name(self.get_secure_cookie("player"))
+        self.web_gui_user = self.player_manager.get_by_name(self.get_current_user())
         self.edit_player = self.player_manager.get_by_name(self.get_argument("playername"))
-        self.edit_player_dict = self.edit_player.as_dict()
 
     @tornado.web.authenticated
     @tornado.web.asynchronous
@@ -85,26 +137,26 @@ class PlayerEditHandler(BaseHandler):
             self.error_message = self.get_argument("error_message")
         except tornado.web.MissingArgumentError:
             self.error_message = ""
-        self.render("playeredit.html")
+        self.render("ajax/playeredit.html")
 
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def post(self):
         if self.web_gui_user.access_level > self.edit_player.access_level:
             self.edit_player.access_level = self.get_argument("access_level")
+            self.error_message = ""
         else:
             error_message = "You are not allowed to change this users' data!"
-            self.redirect("playeredit.html?playername={n}&error_message={e}".format(n=self.get_argument("playername"),
-                                                                                    e=error_message))
-        self.redirect("playeredit.html?playername={n}".format(n=self.get_argument("playername")))
+            self.redirect("ajax/playeredit.html?playername={n}&error_message={e}".format(
+                n=self.get_argument("playername"), e=error_message))
+        self.render("ajax/playeredit.html")
 
 
 class AdminStopHandler(BaseHandler):
 
     def initialize(self):
         self.levels = UserLevels.ranks
-        self.player_manager = self.settings.get("playermanager")
-        self.web_gui_user = self.player_manager.get_by_name(self.get_secure_cookie("player"))
+        self.web_gui_user = self.player_manager.get_by_name(self.get_current_user())
 
     @tornado.web.authenticated
     @tornado.web.asynchronous
@@ -122,21 +174,26 @@ class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
 
     def initialize(self):
         self.clients = []
-        #self.messages = set()
         self.messages = self.settings.get("messages")
+        self.messages_log = self.settings.get("messages_log")
         self.callback = PeriodicCallback(self.update_chat, 500)
+        self.factory = self.settings.get("factory")
 
     def open(self, *args):
         self.clients.append(self)
+        print(self.messages_log)
+        for msg in self.messages_log:
+            print(msg)
+            self.write_message(msg)
         self.callback.start()
 
     def on_message(self, message):
-        messagejson = ujson.loads(message)
-        player = self.get_secure_cookie("player")
-        factory = self.settings.get("factory")
+        messagejson = json.loads(message)
+        user = self.get_current_user()
 
         self.messages.add(message)
-        factory.broadcast(messagejson["message"], 0, "", player)
+        self.messages_log.add(message)
+        self.factory.broadcast(messagejson["message"], 0, "", user)
 
     def update_chat(self):
         if len(self.messages) > 0:
@@ -150,8 +207,17 @@ class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
         self.callback.stop()
 
 
+class WebChatJsHandler(BaseHandler):
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        self.render("js/webgui.chat.js")
+
+
 class WebGuiApp(tornado.web.Application):
-    def __init__(self, port, ownerpassword, playermanager, factory, cookie_secret, serverurl, messages):
+    def __init__(self, port, ownerpassword, playermanager, factory, cookie_secret, serverurl, messages, messages_log,
+                 restart_script):
         logging.getLogger('tornado.general').addHandler(logging.FileHandler("webgui.log"))
         logging.getLogger('tornado.application').addHandler(logging.FileHandler("webgui.log"))
         logging.getLogger('tornado.access').addHandler(logging.FileHandler("webgui_access.log"))
@@ -159,18 +225,27 @@ class WebGuiApp(tornado.web.Application):
         handlers = [
             (r"/login", LoginHandler),
             (r"/logout", LogoutHandler),
+            (r"/restart", RestartHandler),
             (r'/chat', WebSocketChatHandler),
             (r'/stopserver', AdminStopHandler),
-            (r'/playerlist.html', PlayerListHandler),
-            (r'/playeredit.html', PlayerEditHandler),
+            (r'/ajax/playerlistonline.html', PlayerOnlineListHandler),
+            (r'/ajax/playerlist.html', PlayerListHandler),
+            (r'/ajax/playeredit.html', PlayerEditHandler),
+            (r'/ajax/playersonline.html', PlayerOnlineSideBarHandler),
+            (r'/ajax/dashboard.html', DashboardHandler),
+            (r'/js/webgui.chat.js', WebChatJsHandler),
             (r'/index.html', IndexHandler),
             (r'/', IndexHandler),
-            (r'/style/(.*)', tornado.web.StaticFileHandler,
-             {'path': os.path.join(os.path.dirname(__file__), 'style')}),
+            (r'/ajax/(.*)', tornado.web.StaticFileHandler,
+             {'path': os.path.join(os.path.dirname(__file__), 'static/ajax')}),
             (r'/css/(.*)', tornado.web.StaticFileHandler,
              {'path': os.path.join(os.path.dirname(__file__), 'static/css')}),
             (r'/js/(.*)', tornado.web.StaticFileHandler,
              {'path': os.path.join(os.path.dirname(__file__), 'static/js')}),
+            (r'/plugins/(.*)', tornado.web.StaticFileHandler,
+             {'path': os.path.join(os.path.dirname(__file__), 'static/plugins')}),
+            (r'/img/(.*)', tornado.web.StaticFileHandler,
+             {'path': os.path.join(os.path.dirname(__file__), 'static/img')}),
             (r'/images/(.*)', tornado.web.StaticFileHandler,
              {'path': os.path.join(os.path.dirname(__file__), 'static/images')})
         ]
@@ -185,7 +260,9 @@ class WebGuiApp(tornado.web.Application):
             factory=factory,
             wsport=port,
             serverurl=serverurl,
-            messages=messages
+            messages=messages,
+            messages_log=messages_log,
+            restart_script=restart_script
         )
         tornado.web.Application.__init__(self, handlers, **settings)
         self.listen(port)

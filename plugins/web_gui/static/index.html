@@ -1,197 +1,131 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-
-<head>
-
-<meta name="Description" content="Information architecture, Web Design, Web Standards." />
-<meta name="Keywords" content="your, keywords" />
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-<meta name="Distribution" content="Global" />
-<meta name="Author" content="Erwin Aligam - ealigam@gmail.com" />
-<meta name="Robots" content="index,follow" />
-
-<link rel="stylesheet" href="css/PixelGreen.css" type="text/css" />
-    <script type="text/javascript">
-        var ws;
-
-        function createChatEntry(msgdate, username, message) {
-            var entry = document.createElement("div");
-            entry.class = "chat_entry";
-
-            var dom_msgdate = document.createElement("span");
-            dom_msgdate.class = "chat_msgdate";
-            dom_msgdate.innerHTML = msgdate + " ";
-            entry.appendChild(dom_msgdate);
-
-            var dom_uname = document.createElement("span");
-            dom_uname.class = "chat_username";
-            dom_uname.innerHTML = username + ": ";
-            entry.appendChild(dom_uname);
-
-            var dom_msg = document.createElement("span");
-            dom_msg.class = "chat_message";
-            dom_msg.innerHTML = message;
-            entry.appendChild(dom_msg);
-
-            return entry;
-        }
-
-        function openWS(messageContainer) {
-            ws = new WebSocket("ws://{{ handler.settings.get("serverurl") }}:{{ handler.settings.get("wsport") }}/chat");
-            ws.onmessage = function (e) {
-                var data = JSON.parse(e.data);
-                messageContainer.appendChild(createChatEntry(data.msgdate, data.author, data.message));
-            };
-            ws.onclose = function (e) {
-                openWS(messageContainer);
-            };
-        }
-
-        function sendMessage() {
-            var d = new Date();
-            var data = { msgdate: "[" + twoDigits(d.getHours()) + ":" + twoDigits(d.getMinutes()) + ":" + twoDigits(d.getSeconds()) + "]",
-                author: document.getElementById("username").value,
-                message: document.getElementById("message").value };
-
-            if (data.author && data.message) {
-                ws.send(JSON.stringify(data));
-            }
-        }
-
-        window.onload = function () {
-            var d = new Date();
-            var msgdate = "[" + twoDigits(d.getHours()) + ":" + twoDigits(d.getMinutes()) + ":" + twoDigits(d.getSeconds()) + "]";
-            var messageContainer = document.getElementById("chat");
-            if ("WebSocket" in window) {
-                messageContainer.appendChild(createChatEntry(msgdate, "[SYSTEM]", "WebSocket is supported by your browser!"));
-                openWS(messageContainer);
-            }
-            else {
-                messageContainer.appendChild(createChatEntry(msgdate, "[SYSTEM]", "WebSocket is NOT supported by your browser!"));
-            }
-        };
-
-        function confirmAction(action) {
-            var agree=confirm("Are you sure you want to " + action + "?");
-            return (agree)
-        }
-
-        function stopServer() {
-            if (confirmAction("stop the server")) window.open("/stopserver","_self")
-        }
-
-        function twoDigits(n){
-            return n<10? '0'+n:''+n;
-        }
-
-    </script>
-
-<title>StarryPy WebGUI</title>
-	
-</head>
-
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>StarryPy WebGUI</title>
+		<meta name="description" content="description">
+		<meta name="author" content="DevOOPS">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="plugins/bootstrap/bootstrap.css" rel="stylesheet">
+		<link href="plugins/jquery-ui/jquery-ui.min.css" rel="stylesheet">
+		<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+		<link href='http://fonts.googleapis.com/css?family=Righteous' rel='stylesheet' type='text/css'>
+		<link href="plugins/fancybox/jquery.fancybox.css" rel="stylesheet">
+		<link href="plugins/fullcalendar/fullcalendar.css" rel="stylesheet">
+		<link href="plugins/xcharts/xcharts.min.css" rel="stylesheet">
+		<link href="plugins/select2/select2.css" rel="stylesheet">
+		<link href="css/style.min.css" rel="stylesheet">
+		<link href="css/footer.css" rel="stylesheet" />
+		<script src="plugins/jquery/jquery-2.1.0.min.js"></script>
+		<script src="js/noty/packaged/jquery.noty.packaged.min.js"></script>
+		<script src="js/noty/layouts/center.js"></script>
+		<script src="js/noty/layouts/centerRight.js"></script>
+		<script src="js/webgui.general.js" type="text/javascript"></script>
+	    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+				<script src="http://getbootstrap.com/docs-assets/js/html5shiv.js"></script>
+				<script src="http://getbootstrap.com/docs-assets/js/respond.min.js"></script>
+		<![endif]-->
+	</head>
 <body>
-<!-- wrap starts here -->
-<div id="wrap">
-
-	<div id="header"><div id="header-content">	
-		
-		<h1 id="logo"><a href="index.html" title="">StarryPy<span class="gray">WebGUI</span></a></h1>
-		<h2 id="slogan">Put your site slogan here...</h2>		
-		
-		<!-- Menu Tabs -->
-		<ul>
-			<li><a href="index.html" id="current">Home</a></li>
-			<li><a href="playerlist.html">Player List</a></li>
-			<li><a href="index.html">Downloads</a></li>
-			<li><a href="index.html">Support</a></li>
-			<li><a href="index.html">About</a></li>
-			<li><a href="logout">Logout</a></li>
-		</ul>		
-			
-	
-	</div></div>
-	
-	<div class="headerphoto"></div>
-				
-	<!-- content-wrap starts here -->
-	<div id="content-wrap"><div id="content">		
-		
-		<div id="sidebar" >
-		
-			<div class="sidebox">
-				
-				<table>
-                    {% set row_count = 1 %}
-					<tr>
-						<th class="first"><strong>Players online: {{ len(handler.playerlistonline) }}</strong></th>
-					</tr>
-                    {% for player in handler.playerlistonline %}
-                        {% set row_class = "row-a" if bool(row_count & 1) else "row-b" %}
-					<tr class="{{ row_class }}">
-						<td class="first">{{ player.as_dict()["name"] }}</td>
-					</tr>
-                        {% set row_count +=1 %}
-                    {% end %}
-				</table>
-						
+<!--Start Header-->
+<header class="navbar">
+	<div class="container-fluid expanded-panel">
+		<div class="row">
+			<div id="logo" class="col-xs-12 col-sm-2">
+				<a href="index.html">StarryPy WebGUI</a>
 			</div>
-
-			<div class="sidebox">
-
-				<h1 class="clear">Admin Actions</h1>
-				<ul class="sidemenu">
-					<li><button class="button" onclick="stopServer()">Stop StarryPy</button></li><br>
-					<li><button class="button" onclick="stopServer()">Restart Server</button></li>
-				</ul>
-
+			<div id="top-panel" class="col-xs-12 col-sm-10">
+				<div class="row">
+					<div class="col-xs-8 col-sm-4">
+						<a href="#" class="show-sidebar">
+						  <i class="fa fa-bars"></i>
+						</a>
+					</div>
+					<div class="col-xs-4 col-sm-8 top-panel-right">
+						<ul class="nav navbar-nav pull-right panel-menu">
+							<li class="dropdown">
+								<a href="#" class="dropdown-toggle account" data-toggle="dropdown">
+									<i class="fa fa-angle-down pull-right"></i>
+									<div class="user-mini pull-right">
+										<span class="welcome">Welcome,</span>
+										<span>{{ handler.user }}</span>
+									</div>
+								</a>
+								<ul class="dropdown-menu">
+									<li>
+										<a href="ajax/playeredit.html?playername={{ handler.user }}" class="ajax-link">
+											<i class="fa fa-user"></i>
+											<span class="hidden-sm text">Profile</span>
+										</a>
+									</li>
+									<li>
+										<a href="logout">
+											<i class="fa fa-power-off"></i>
+											<span class="hidden-sm text">Logout</span>
+										</a>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</div>
 			</div>
-
-					
-		</div>	
-	
-		<div id="main">		
-		
-			<div class="post">
-			
-				<a name="Chat"></a>
-				<h1>Chat</h1>
-				
-
-                <div id="chat" style="width: 100%; height: 40em; overflow: auto; font-family: Arial"></div>
-                <div id="input_area">
-                <input id="username" type="hidden" value="{{ handler.current_user }}">
-                <input class="search" type="text" id="message" placeholder="Your message" style="display: block; width: 400px" onkeydown="if(event.keyCode==13){sendMessage()}">
-                <button class="button" onclick="sendMessage()" style="display: block">Send</button>
-                </div>
-				
-			</div>
-										
-		</div>					
-		
-	<!-- content-wrap ends here -->		
-	</div></div>
-
-<!-- footer starts here -->	
-<div id="footer"><div id="footer-content">
-	
-		<div class="col2 float-right">
-
-            <p>
-			&copy; copyright 2010 Your Company Name<br />
-			<a href="http://www.bluewebtemplates.com/" title="Website Templates">website templates</a> by <a href="http://www.styleshout.com/">styleshout</a> <br />
-
-			Valid <a href="http://jigsaw.w3.org/css-validator/check/referer">CSS</a> |
-		   	      <a href="http://validator.w3.org/check/referer">XHTML</a>
-			</p>
 		</div>
-	
-</div></div>
-<!-- footer ends here -->
-	
-<!-- wrap ends here -->
+	</div>
+</header>
+<!--End Header-->
+<!--Start Container-->
+<div id="main" class="container-fluid">
+	<div class="row">
+		<div id="sidebar-left" class="col-xs-2 col-sm-2">
+			<ul class="nav main-menu">
+				<li>
+					<a href="ajax/dashboard.html" class="active ajax-link">
+						<i class="fa fa-dashboard"></i>
+						<span class="hidden-xs">Dashboard</span>
+					</a>
+				</li>
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle">
+						<i class="fa fa-group"></i>
+						 <span class="hidden-xs">Players</span>
+					</a>
+					<ul class="dropdown-menu">
+						<li><a href="ajax/playerlist.html" class="ajax-link"><i class="fa fa-list"></i> All Players</a></li>
+						<li><a href="ajax/playerlistonline.html" class="ajax-link"><i class="fa fa-list"></i> Online Players</a></li>
+					</ul>
+				</li>
+			</ul>
+			<div id="footer">
+				<a href="https://github.com/traxo-xx/StarryPy_plugins/tree/web_gui/plugins/web_gui" target="_blank" title="WebGui Repo">
+					<i style="color: #525252;" class="fa fa-github fa-lg"></i>
+				</a>
+				<a href="https://github.com/devoopsme/devoops" target="_blank" title="Powered by DevOOPS Bootstrap 3 Admin theme">
+					<i style="color: #525252;" class="fa fa-bolt fa-lg"></i>
+				</a>	
+			</div>			
+		</div>
+		<!--Start Content-->
+		<div id="content" class="col-xs-12 col-sm-10">
+			<div class="preloader">
+				<img src="img/devoops_getdata.gif" class="devoops-getdata" alt="preloader"/>
+			</div>
+			<div id="ajax-content"></div>
+		</div>
+		<!--End Content-->
+	</div>
 </div>
-
+<!--End Container-->
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<!--<script src="http://code.jquery.com/jquery.js"></script>-->
+<script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="plugins/bootstrap/bootstrap.min.js"></script>
+<script src="plugins/justified-gallery/jquery.justifiedgallery.min.js"></script>
+<script src="plugins/tinymce/tinymce.min.js"></script>
+<script src="plugins/tinymce/jquery.tinymce.min.js"></script>
+<!-- All functions for this theme + document.ready processing -->
+<script src="js/devoops.min.js"></script>
 </body>
 </html>

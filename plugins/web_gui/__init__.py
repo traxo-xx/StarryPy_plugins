@@ -1,1 +1,1 @@
-from web_gui_plugin import WebGuiPlugin
+from .web_gui_plugin import WebGuiPlugin

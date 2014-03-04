@@ -2,6 +2,7 @@ function serverAction(text, url) {
     noty({
 	  text: "Are you sure you want to " + text + "?",
 	  layout: "center",
+	  type: "warning",
 	  buttons: [
 	    {addClass: 'btn btn-primary', text: 'Ok', onClick: function($noty) {
 	
@@ -22,6 +23,7 @@ function playerAction(text, action) {
     noty({
 	  text: "Are you sure you want to " + text + "?",
 	  layout: "center",
+	  type: "warning",
 	  buttons: [
 	    {addClass: 'btn btn-primary', text: 'Ok', onClick: function($noty) {
 	

@@ -1,55 +1,96 @@
-function serverAction(text, url) {
-    noty({
-	  text: "Are you sure you want to " + text + "?",
-	  layout: "center",
-	  type: "warning",
-	  buttons: [
-	    {addClass: 'btn btn-primary', text: 'Ok', onClick: function($noty) {
-	
-	        $noty.close();
-	        window.open(url, "_self");
-	      }
-	    },
-	    {addClass: 'btn btn-danger', text: 'Cancel', onClick: function($noty) {
-	        $noty.close();
-	        noty({text: 'Action has been canceled.', layout: "center", type: 'success'});
-	      }
-	    }
-	  ]
-	});    
+function getCookie(name) {
+    var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+    return r ? r[1] : undefined;
 }
 
-function playerAction(text, action) {
+function serverAction(text, url) {
     noty({
-	  text: "Are you sure you want to " + text + "?",
-	  layout: "center",
-	  type: "warning",
-	  buttons: [
-	    {addClass: 'btn btn-primary', text: 'Ok', onClick: function($noty) {
-	
-	        $noty.close();
-	        window.open(url, "_self");
-	      }
-	    },
-	    {addClass: 'btn btn-danger', text: 'Cancel', onClick: function($noty) {
-	        $noty.close();
-	        noty({text: 'Action has been canceled.', layout: "center", type: 'success'});
-	      }
-	    }
-	  ]
-	});    
+        text: "Are you sure you want to " + text + "?",
+        layout: "center",
+        type: "alert",
+        buttons: [
+            {addClass: 'btn btn-primary', text: 'Ok', onClick: function ($noty) {
+
+                $noty.close();
+                window.open(url, "_self");
+            }
+            },
+            {addClass: 'btn btn-danger', text: 'Cancel', onClick: function ($noty) {
+                $noty.close();
+                noty({text: 'Action has been canceled.', layout: "center", type: 'success'});
+            }
+            }
+        ]
+    });
+}
+
+function playerAction(info, action) {
+    noty({
+        text: "Are you sure you want to " + action + " " + info + "?",
+        layout: "center",
+        type: "alert",
+        buttons: [
+            {addClass: 'btn btn-primary', text: 'Ok', onClick: function ($noty) {
+
+                $noty.close();
+                $.post("ajax/playeraction", {
+                    info: info,
+                    action: action,
+                    _xsrf: getCookie("_xsrf")
+                }, function (data) {
+                    var response = jQuery.parseJSON(data);
+
+                    if (response.status == "ERROR") {
+                        noty({
+                            text: response.msg,
+                            layout: "center",
+                            type: 'error'
+                        });
+                    } else {
+                        noty({
+                            text: response.msg,
+                            layout: "center",
+                            type: 'success'
+                        });
+                    }
+                });
+            }
+            },
+            {addClass: 'btn btn-danger', text: 'Cancel', onClick: function ($noty) {
+                $noty.close();
+                noty({
+                    text: 'Action has been canceled.',
+                    layout: "center",
+                    type: 'success'
+                });
+            }
+            }
+        ]
+    });
 }
 
 function stopServer() {
-    serverAction("stop the server", "/stopserver"); 
+    serverAction("stop the server", "/stopserver");
 }
 
 function restartServer() {
-    serverAction("restart the server", "/restart"); 
+    serverAction("restart the server", "/restart");
+}
+
+function kickPlayer(player) {
+    playerAction(player, "kick");
+}
+
+function banPlayer(ip) {
+    playerAction(ip, "ban");
+}
+
+function unBanPlayer(ip) {
+    playerAction(ip, "unban");
 }
 
 function deletePlayer(player) {
-    playerAction("delete the player " + player, "delete");
+    playerAction(player, "delete");
 }
 
 function twoDigits(n) {

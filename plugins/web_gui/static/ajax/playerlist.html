@@ -1,3 +1,5 @@
+<link href="css/bootstrap-sortable.css" rel="stylesheet">
+<script src="js/bootstrap-sortable.js"></script>
 <div class="row">
 	<div id="breadcrumb" class="col-xs-12">
 		<ol class="breadcrumb">
@@ -9,10 +11,10 @@
 </div>
 <div class="row">
 	<div class="col-xs-12 col-sm-12">
-		<table class="table table-bordered">
+		<table class="table table-bordered sortable">
 			<thead>
 				<tr>
-					<th>Name</th>
+					<th data-defaultsort='asc'>Name</th>
 					<th>Planet</th>
 					<th>Access Level</th>
 					<th>Last Seen</th>
@@ -22,7 +24,7 @@
 			{% for player in handler.playerlist %}
 				<tr>
 					{% set iconcolour = "#54ae86" if player.logged_in else "#D15E5E" %}
-					<td><a href="#" onclick='LoadAjaxContent("ajax/playeredit.html?playername=" + encodeURIComponent("{{ player.name }}"));'>{{ player.name }} <i class="fa fa-user" style="color: {{ iconcolour }}"></i></a></td>
+					<td data-value="{{ player.name }}"><a href="#" onclick='LoadAjaxContent("ajax/playeredit.html?playername=" + encodeURIComponent("{{ player.name }}"));'>{{ player.name }} <i class="fa fa-user" style="color: {{ iconcolour }}"></i>{% if handler.player_manager.check_bans(player.ip) %} <i class="fa fa-lock" style="color: #d9ce00" title="User is banned"></i>{% end %}</a></td>
 					<td>{{ player.planet }}</td>
 					<td>{{ player.access_level }}</td>
 					<td>{{ str(player.last_seen).rpartition('.')[0] }}</td>
@@ -32,10 +34,4 @@
 		</table>
 	</div>
 </div>
-<script type="text/javascript">
-$(document).ready(function() {
-	// Drag-n-Drop feature
-	WinMove();
-});
-</script>
 

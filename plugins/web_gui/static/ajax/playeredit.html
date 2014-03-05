@@ -9,7 +9,15 @@
 </div>
 <div class="row">
 	<div class="col-xs-12 col-sm-6">
-			<h3 style="margin-bottom: 10px" ><strong>Edit {{ handler.edit_player.name }}</strong></h3><button class="btn btn-danger" onclick="deletePlayer('{{ handler.edit_player.name }}')">Delete</button>
+        {% set iconcolour = "#54ae86" if handler.edit_player.logged_in else "#D15E5E" %}
+        <h3 style="margin-bottom: 10px" ><strong>Edit {{ handler.edit_player.name }} <i class="fa fa-user" style="color: {{ iconcolour }}"></i></strong></h3>
+        <button class="btn btn-warning" onclick="kickPlayer('{{ handler.edit_player.name }}')">Kick</button>
+        {% if handler.player_manager.check_bans(handler.edit_player.ip) %}
+        <button class="btn btn-success" onclick="unBanPlayer('{{ handler.edit_player.ip }}')">Unban</button>
+        {% else %}
+        <button class="btn btn-warning" onclick="banPlayer('{{ handler.edit_player.ip }}')">Ban</button>
+        {% end %}
+        <button class="btn btn-danger" onclick="deletePlayer('{{ handler.edit_player.name }}')">Delete</button>
 		<div class="box">
 			<div class="box-content">
 
@@ -40,7 +48,7 @@
                         </tr>
                         <tr>
                             <td>Last Seen</td>
-                            <td>{{ handler.edit_player.last_seen }}</td>
+                            <td>{{ str(handler.edit_player.last_seen).rpartition('.')[0] }}</td>
                         </tr>
                         <tr>
                             <td>planet</td>

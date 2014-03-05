@@ -54,7 +54,7 @@ class RestartHandler(BaseHandler):
         if self.web_gui_user.access_level == self.levels["OWNER"]:
             self.error_message = ""
             self.render("restart.html")
-            print(subprocess.call(self.settings.get("restart_script"), shell=True))
+            subprocess.call(self.settings.get("restart_script"), shell=True)
         else:
             self.error_message = "Only owners can restart the server!"
             self.render("restart.html")
@@ -152,6 +152,56 @@ class PlayerEditHandler(BaseHandler):
         self.render("ajax/playeredit.html")
 
 
+class PlayerActionHandler(BaseHandler):
+
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+        self.levels = UserLevels.ranks
+        self.web_gui_user = self.player_manager.get_by_name(self.get_current_user())
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def post(self):
+        if self.get_argument("action") == "delete":
+            self.edit_player = self.player_manager.get_by_name(self.get_argument("info"))
+            if self.web_gui_user.access_level == self.levels["OWNER"]:
+                if self.edit_player is not None:
+                    self.player_manager.delete(self.edit_player)
+                    response = json.dumps({"status": "OK", "msg": "Player deleted"})
+                else:
+                    response = json.dumps({"status": "ERROR", "msg": "Player not found!"})
+            else:
+                response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
+        elif self.get_argument("action") == "ban":
+            if self.web_gui_user.access_level >= self.levels["ADMIN"]:
+                self.player_manager.ban(self.get_argument("info"))
+                response = json.dumps({"status": "OK", "msg": "IP banned"})
+            else:
+                response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
+        elif self.get_argument("action") == "unban":
+            if self.web_gui_user.access_level >= self.levels["ADMIN"]:
+                for ban in self.player_manager.bans:
+                    if ban.ip == self.get_argument("info"):
+                        self.player_manager.delete_ban(ban)
+                response = json.dumps({"status": "OK", "msg": "IP unbanned"})
+            else:
+                response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
+        elif self.get_argument("action") == "kick":
+            if self.web_gui_user.access_level >= self.levels["ADMIN"]:
+                player = self.player_manager.whois(self.get_argument("info"))
+                if player and player.logged_in:
+                    protocol = self.factory.protocols[player.protocol]
+                    protocol.transport.loseConnection()
+                    response = json.dumps({"status": "OK", "msg": "IP unbanned"})
+                else:
+                    response = json.dumps({"status": "ERROR", "msg": "Player not online."})
+            else:
+                response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
+        else:
+            response = json.dumps({"status": "ERROR", "msg": "Invalid action."})
+        self.finish(response)
+
+
 class AdminStopHandler(BaseHandler):
 
     def initialize(self):
@@ -181,9 +231,7 @@ class WebSocketChatHandler(tornado.websocket.WebSocketHandler):
 
     def open(self, *args):
         self.clients.append(self)
-        print(self.messages_log)
         for msg in self.messages_log:
-            print(msg)
             self.write_message(msg)
         self.callback.start()
 
@@ -233,6 +281,7 @@ class WebGuiApp(tornado.web.Application):
             (r'/ajax/playeredit.html', PlayerEditHandler),
             (r'/ajax/playersonline.html', PlayerOnlineSideBarHandler),
             (r'/ajax/dashboard.html', DashboardHandler),
+            (r'/ajax/playeraction', PlayerActionHandler),
             (r'/js/webgui.chat.js', WebChatJsHandler),
             (r'/index.html', IndexHandler),
             (r'/', IndexHandler),

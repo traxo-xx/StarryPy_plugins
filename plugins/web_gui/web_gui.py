@@ -197,7 +197,7 @@ class PlayerActionHandler(BaseHandler):
                 response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
         elif self.get_argument("action") == "unban":
             if self.web_gui_user.access_level >= self.levels["ADMIN"]:
-                self.player_manager.unban(self.get_argument("info"))
+                self.player_manager.unban(self.edit_player.ip)
                 response = json.dumps({"status": "OK", "msg": "IP was unbanned"})
             else:
                 response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})

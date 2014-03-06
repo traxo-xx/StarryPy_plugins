@@ -11,11 +11,13 @@
 	<div class="col-xs-12 col-sm-6">
         {% set iconcolour = "#54ae86" if handler.edit_player.logged_in else "#D15E5E" %}
         <h3 style="margin-bottom: 10px" ><strong>Edit {{ handler.edit_player.name }} <i class="fa fa-user" style="color: {{ iconcolour }}"></i></strong></h3>
+        {% if handler.edit_player.logged_in %}
         <button class="btn btn-warning" onclick="kickPlayer('{{ handler.edit_player.name }}')">Kick</button>
+        {% end %}
         {% if handler.player_manager.check_bans(handler.edit_player.ip) %}
-        <button class="btn btn-success" onclick="unBanPlayer('{{ handler.edit_player.ip }}')">Unban</button>
+        <button class="btn btn-success" onclick="unBanPlayer('{{ handler.edit_player.name }}')">Unban</button>
         {% else %}
-        <button class="btn btn-warning" onclick="banPlayer('{{ handler.edit_player.ip }}')">Ban</button>
+        <button class="btn btn-warning" onclick="banPlayer('{{ handler.edit_player.name }}')">Ban</button>
         {% end %}
         <button class="btn btn-danger" onclick="deletePlayer('{{ handler.edit_player.name }}')">Delete</button>
 		<div class="box">
@@ -81,9 +83,3 @@
 		</div>
 	</div>
 </div>
-<script type="text/javascript">
-$(document).ready(function() {
-	// Drag-n-Drop feature
-	WinMove();
-});
-</script>

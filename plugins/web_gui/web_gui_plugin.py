@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from base_plugin import BasePlugin
 from plugins.core.player_manager import PlayerManager
-from packets import chat_sent
+from packets import chat_sent, client_connect
 from . import web_gui
 import tornado.ioloop
 from tornado.platform.twisted import TwistedIOLoop
@@ -59,5 +59,27 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
         message = json.dumps({"msgdate": msgdate, "author": self.protocol.player.name, "message": parsed.message.decode("utf-8")})
         self.messages.add(message)
         self.messages_log.add(message)
+
         return True
 
+    def on_client_connect(self, data):
+        parsed = client_connect().parse(data.data)
+        msgdate = datetime.now().strftime("[%H:%M:%S]")
+        connect_player = self.player_manager.get_by_name(parsed.name.decode("utf-8"))
+        if self.player_manager.check_bans(connect_player.ip):
+            msgtxt = "Banned Player {p} tried to join the server.".format(p=connect_player.name)
+        else:
+            msgtxt = "Player {p} has joined the server.".format(p=connect_player.name)
+        message = json.dumps({"msgdate": msgdate, "author": "SERVER", "message": msgtxt})
+        self.messages.add(message)
+        self.messages_log.add(message)
+
+        return True
+
+    def on_client_disconnect(self, data):
+        if self.protocol.player is not None:
+            msgdate = datetime.now().strftime("[%H:%M:%S]")
+            msgtxt = "Player {p} has left the server.".format(p=self.protocol.player.name.encode("utf-8"))
+            message = json.dumps({"msgdate": msgdate, "author": "SERVER", "message": msgtxt})
+            self.messages.add(message)
+            self.messages_log.add(message)

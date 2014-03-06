@@ -49,9 +49,12 @@ function sendMessage() {
 var msgdate = "[" + twoDigits(d.getHours()) + ":" + twoDigits(d.getMinutes()) + ":" + twoDigits(d.getSeconds()) + "]";
 var messageContainer = document.getElementById("chat");
 if ("WebSocket" in window) {
-    messageContainer.appendChild(createChatEntry(msgdate, "[SYSTEM]", "WebSocket is supported by your browser!"));
     openWS(messageContainer);
 }
 else {
-    messageContainer.appendChild(createChatEntry(msgdate, "[SYSTEM]", "WebSocket is NOT supported by your browser!"));
+    noty({
+        text: "Your browser does not support WebSockets. The chat won't work.",
+        layout: "center",
+        type: "error"
+    });
 }

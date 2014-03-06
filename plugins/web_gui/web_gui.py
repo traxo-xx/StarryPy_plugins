@@ -2,6 +2,7 @@
 import os
 import logging
 import json
+import time
 import tornado.web
 import tornado.websocket
 import subprocess
@@ -152,47 +153,60 @@ class PlayerEditHandler(BaseHandler):
         self.render("ajax/playeredit.html")
 
 
+class PlayerQuickMenuHandler(BaseHandler):
+
+    def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
+        self.edit_player = self.player_manager.get_by_name(self.get_argument("playername"))
+
+    @tornado.web.authenticated
+    @tornado.web.asynchronous
+    def get(self):
+        self.render("ajax/playerquickmenu.html")
+
+
 class PlayerActionHandler(BaseHandler):
 
     def initialize(self):
         self.player_manager = self.settings.get("playermanager")
         self.levels = UserLevels.ranks
         self.web_gui_user = self.player_manager.get_by_name(self.get_current_user())
+        self.edit_player = self.player_manager.get_by_name(self.get_argument("info"))
+        self.factory = self.settings.get("factory")
 
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def post(self):
         if self.get_argument("action") == "delete":
-            self.edit_player = self.player_manager.get_by_name(self.get_argument("info"))
             if self.web_gui_user.access_level == self.levels["OWNER"]:
                 if self.edit_player is not None:
                     self.player_manager.delete(self.edit_player)
-                    response = json.dumps({"status": "OK", "msg": "Player deleted"})
+                    response = json.dumps({"status": "OK", "msg": "Player was deleted"})
                 else:
                     response = json.dumps({"status": "ERROR", "msg": "Player not found!"})
             else:
                 response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
         elif self.get_argument("action") == "ban":
             if self.web_gui_user.access_level >= self.levels["ADMIN"]:
-                self.player_manager.ban(self.get_argument("info"))
-                response = json.dumps({"status": "OK", "msg": "IP banned"})
+                self.player_manager.ban(self.edit_player.ip)
+                if self.edit_player.logged_in:
+                    protocol = self.factory.protocols[self.edit_player.protocol]
+                    protocol.transport.loseConnection()
+                response = json.dumps({"status": "OK", "msg": "IP was banned"})
             else:
                 response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
         elif self.get_argument("action") == "unban":
             if self.web_gui_user.access_level >= self.levels["ADMIN"]:
-                for ban in self.player_manager.bans:
-                    if ban.ip == self.get_argument("info"):
-                        self.player_manager.delete_ban(ban)
-                response = json.dumps({"status": "OK", "msg": "IP unbanned"})
+                self.player_manager.unban(self.get_argument("info"))
+                response = json.dumps({"status": "OK", "msg": "IP was unbanned"})
             else:
                 response = json.dumps({"status": "ERROR", "msg": "You don't have permission to do this."})
         elif self.get_argument("action") == "kick":
             if self.web_gui_user.access_level >= self.levels["ADMIN"]:
-                player = self.player_manager.whois(self.get_argument("info"))
-                if player and player.logged_in:
-                    protocol = self.factory.protocols[player.protocol]
+                if self.edit_player.logged_in:
+                    protocol = self.factory.protocols[self.edit_player.protocol]
                     protocol.transport.loseConnection()
-                    response = json.dumps({"status": "OK", "msg": "IP unbanned"})
+                    response = json.dumps({"status": "OK", "msg": "Player was kicked."})
                 else:
                     response = json.dumps({"status": "ERROR", "msg": "Player not online."})
             else:
@@ -205,6 +219,7 @@ class PlayerActionHandler(BaseHandler):
 class AdminStopHandler(BaseHandler):
 
     def initialize(self):
+        self.player_manager = self.settings.get("playermanager")
         self.levels = UserLevels.ranks
         self.web_gui_user = self.player_manager.get_by_name(self.get_current_user())
 
@@ -279,6 +294,7 @@ class WebGuiApp(tornado.web.Application):
             (r'/ajax/playerlistonline.html', PlayerOnlineListHandler),
             (r'/ajax/playerlist.html', PlayerListHandler),
             (r'/ajax/playeredit.html', PlayerEditHandler),
+            (r'/ajax/playerquickmenu.html', PlayerQuickMenuHandler),
             (r'/ajax/playersonline.html', PlayerOnlineSideBarHandler),
             (r'/ajax/dashboard.html', DashboardHandler),
             (r'/ajax/playeraction', PlayerActionHandler),

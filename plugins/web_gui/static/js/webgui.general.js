@@ -81,16 +81,27 @@ function kickPlayer(player) {
     playerAction(player, "kick");
 }
 
-function banPlayer(ip) {
-    playerAction(ip, "ban");
+function banPlayer(player) {
+    playerAction(player, "ban");
 }
 
-function unBanPlayer(ip) {
-    playerAction(ip, "unban");
+function unBanPlayer(player) {
+    playerAction(player, "unban");
 }
 
 function deletePlayer(player) {
     playerAction(player, "delete");
+}
+
+function playQuickMenu(player) {
+    $.get("ajax/playerquickmenu.html", {
+        playername: player
+    }, function(data) {
+        noty({
+            text: data,
+            layout: "center"
+        });
+    });
 }
 
 function twoDigits(n) {

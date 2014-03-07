@@ -24,10 +24,12 @@ function createChatEntry(msgdate, username, message) {
 }
 
 function openWS(messageContainer) {
-    ws = new WebSocket("ws://{{ handler.settings.get("serverurl") }}:{{ handler.settings.get("wsport") }}/chat");
+    ws = new WebSocket("ws://{{ handler.serverurl }}:{{ handler.wsport }}/chat");
     ws.onmessage = function (e) {
         var data = JSON.parse(e.data);
         messageContainer.appendChild(createChatEntry(data.msgdate, data.author, data.message));
+        var chat = $('#chat');
+        chat.scrollTop(chat.prop("scrollHeight"));
     };
     ws.onclose = function (e) {
         openWS(messageContainer);

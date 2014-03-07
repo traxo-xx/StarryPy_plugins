@@ -30,7 +30,7 @@
 			<div class="box-content">
 				<div class="col-xs-12 col-sm-9" id="chat">
 				</div>
-                <input id="username" type="hidden" value="{{ handler.user }}">
+                <input id="username" type="hidden" value="{{ handler.get_current_user() }}">
 				<div class="col-xs-12 col-sm-9">
 					<input type="text" id="message" class="form-control" placeholder="Type your message here..." onkeydown="if(event.keyCode==13){sendMessage()}">
 				</div>

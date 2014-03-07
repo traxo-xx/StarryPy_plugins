@@ -30,12 +30,13 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
         else:
             self.cookie_token = self.config.plugin_config['cookie_token']
         self.serverurl = self.config.plugin_config['serverurl']
-        self.messages = set()
-        self.messages_log = set()
+        self.messages = []
+        self.messages_log = []
 
     def activate(self):
         super(WebGuiPlugin, self).activate()
         self.player_manager = self.plugins['player_manager'].player_manager
+        web_gui.WebGuiApp.config = self.config.plugin_config
         self.web_gui_app = web_gui.WebGuiApp(port=self.port, ownerpassword=self.ownerpassword,
                                              playermanager=self.player_manager, factory=self.factory,
                                              cookie_secret=self.cookie_token, serverurl=self.serverurl,
@@ -56,9 +57,10 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
     def on_chat_sent(self, data):
         parsed = chat_sent().parse(data.data)
         msgdate = datetime.now().strftime("[%H:%M:%S]")
-        message = json.dumps({"msgdate": msgdate, "author": self.protocol.player.name, "message": parsed.message.decode("utf-8")})
-        self.messages.add(message)
-        self.messages_log.add(message)
+        message = json.dumps({"msgdate": msgdate, "author": self.protocol.player.name,
+                              "message": parsed.message.decode("utf-8")})
+        self.messages.append(message)
+        self.messages_log.append(message)
 
         return True
 
@@ -71,15 +73,15 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
         else:
             msgtxt = "Player {p} has joined the server.".format(p=connect_player.name)
         message = json.dumps({"msgdate": msgdate, "author": "SERVER", "message": msgtxt})
-        self.messages.add(message)
-        self.messages_log.add(message)
+        self.messages.append(message)
+        self.messages_log.append(message)
 
         return True
 
-    def on_client_disconnect(self, data):
+    def on_client_disconnect(self):
         if self.protocol.player is not None:
             msgdate = datetime.now().strftime("[%H:%M:%S]")
             msgtxt = "Player {p} has left the server.".format(p=self.protocol.player.name.encode("utf-8"))
             message = json.dumps({"msgdate": msgdate, "author": "SERVER", "message": msgtxt})
-            self.messages.add(message)
-            self.messages_log.add(message)
+            self.messages.append(message)
+            self.messages_log.append(message)

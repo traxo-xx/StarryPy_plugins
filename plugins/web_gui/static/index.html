@@ -49,12 +49,12 @@
 									<i class="fa fa-angle-down pull-right"></i>
 									<div class="user-mini pull-right">
 										<span class="welcome">Welcome,</span>
-										<span>{{ handler.user }}</span>
+										<span>{{ handler.get_current_user() }}</span>
 									</div>
 								</a>
 								<ul class="dropdown-menu">
 									<li>
-										<a href="ajax/playeredit.html?playername={{ handler.user }}" class="ajax-link">
+										<a href="ajax/playeredit.html?playername={{ handler.get_current_user() }}" class="ajax-link">
 											<i class="fa fa-user"></i>
 											<span class="hidden-sm text">Profile</span>
 										</a>

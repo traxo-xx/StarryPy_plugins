@@ -172,6 +172,8 @@ Please note:
         "web_gui": {
             "auto_activate": false,
             "cookie_token": "",
+            "log_path": "webgui.log",
+            "log_path_access": "webgui_access.log",
             "ownerpassword": "!!PUT A PASSWORD HERE",
             "port": 8083,
             "remember_cookie_token": true,

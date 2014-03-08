@@ -30,7 +30,7 @@ class LoginHandler(BaseHandler):
     def post(self):
         self.login_user = self.player_manager.get_by_name(self.get_argument("name"))
 
-        if self.login_user is None or self.get_argument("password") != self.settings.get("ownerpassword"):
+        if self.login_user is None or self.get_argument("password") != self.ownerpassword:
             self.failed_login = True
             self.render("login.html")
         else:
@@ -51,7 +51,7 @@ class RestartHandler(BaseHandler):
         if self.web_gui_user.access_level == self.levels["OWNER"]:
             self.error_message = ""
             self.render("restart.html")
-            subprocess.call(self.settings.get("restart_script"), shell=True)
+            subprocess.call(self.restart_script, shell=True)
         else:
             self.error_message = "Only owners can restart the server!"
             self.render("restart.html")

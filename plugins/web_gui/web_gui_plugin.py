@@ -68,10 +68,13 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
         parsed = client_connect().parse(data.data)
         msgdate = datetime.now().strftime("[%H:%M:%S]")
         connect_player = self.player_manager.get_by_name(parsed.name.decode("utf-8"))
-        if self.player_manager.check_bans(connect_player.ip):
-            msgtxt = "Banned Player {p} tried to join the server.".format(p=connect_player.name)
-        else:
-            msgtxt = "Player {p} has joined the server.".format(p=connect_player.name)
+        try:
+            if self.player_manager.check_bans(connect_player.ip):
+                msgtxt = "Banned Player {p} tried to join the server.".format(p=connect_player.name)
+            else:
+                msgtxt = "Player {p} has joined the server.".format(p=connect_player.name)
+        except AttributeError:
+            msgtxt = "New player {p} has joined the server.".format(p=connect_player.name)
         message = json.dumps({"msgdate": msgdate, "author": "SERVER", "message": msgtxt})
         self.messages.append(message)
         self.messages_log.append(message)

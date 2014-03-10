@@ -81,7 +81,7 @@ class WebGuiPlugin(BasePlugin, PlayerManager):
 
         return True
 
-    def on_client_disconnect(self):
+    def on_client_disconnect(self, data):
         if self.protocol.player is not None:
             msgdate = datetime.now().strftime("[%H:%M:%S]")
             msgtxt = "Player {p} has left the server.".format(p=self.protocol.player.name.encode("utf-8"))

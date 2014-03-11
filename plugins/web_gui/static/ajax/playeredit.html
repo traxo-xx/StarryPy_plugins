@@ -27,6 +27,7 @@
                         {% if handler.error_message != "" %}
                         <span style="color: #ff3a35">{{ handler.error_message }}</span>
                         {% end %}
+                        <input type="hidden" name="old_playername" value="{{ handler.edit_player.name }}">
                         <table class="table table-bordered">
                         <tr>
                             <td><strong>Name</strong></td>

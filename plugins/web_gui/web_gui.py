@@ -29,6 +29,8 @@ class LoginHandler(BaseHandler):
 
     def post(self):
         self.login_user = self.player_manager.get_by_name(self.get_argument("name"))
+        if self.login_user is None:
+            self.login_user = self.player_manager.get_by_org_name(self.get_argument("name"))
 
         if self.login_user is None or self.get_argument("password") != self.ownerpassword:
             self.failed_login = True
@@ -118,11 +120,12 @@ class PlayerEditHandler(BaseHandler):
 
     def initialize(self):
         self.web_gui_user = self.player_manager.get_by_name(self.get_current_user())
-        self.edit_player = self.player_manager.get_by_name(self.get_argument("playername"))
+        self.error_message = ""
 
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def get(self):
+        self.edit_player = self.player_manager.get_by_name(self.get_argument("playername"))
         try:
             self.error_message = self.get_argument("error_message")
         except tornado.web.MissingArgumentError:
@@ -132,15 +135,14 @@ class PlayerEditHandler(BaseHandler):
     @tornado.web.authenticated
     @tornado.web.asynchronous
     def post(self):
+        self.edit_player = self.player_manager.get_by_name(self.get_argument("old_playername"))
         if self.web_gui_user.access_level > self.edit_player.access_level:
             if self.edit_player.access_level != self.get_argument("access_level"):
                 self.edit_player.access_level = self.get_argument("access_level")
             if self.get_argument("playername") != "" and self.edit_player.name != self.get_argument("playername"):
-                if self.edit_player.org_name == "":
+                if self.edit_player.org_name is None:
                     self.edit_player.org_name = self.edit_player.name
                 self.edit_player.name = self.get_argument("playername")
-
-            self.error_message = ""
         else:
             error_message = "You are not allowed to change this users' data!"
             self.redirect("ajax/playeredit.html?playername={n}&error_message={e}".format(

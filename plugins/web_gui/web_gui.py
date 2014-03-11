@@ -133,7 +133,13 @@ class PlayerEditHandler(BaseHandler):
     @tornado.web.asynchronous
     def post(self):
         if self.web_gui_user.access_level > self.edit_player.access_level:
-            self.edit_player.access_level = self.get_argument("access_level")
+            if self.edit_player.access_level != self.get_argument("access_level"):
+                self.edit_player.access_level = self.get_argument("access_level")
+            if self.get_argument("playername") != "" and self.edit_player.name != self.get_argument("playername"):
+                if self.edit_player.org_name == "":
+                    self.edit_player.org_name = self.edit_player.name
+                self.edit_player.name = self.get_argument("playername")
+
             self.error_message = ""
         else:
             error_message = "You are not allowed to change this users' data!"

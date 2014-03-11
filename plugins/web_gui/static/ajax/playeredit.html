@@ -24,11 +24,18 @@
 			<div class="box-content">
 
                     <form id="player_edit_form" action="ajax/playeredit.html">
-                        <input type="hidden" name="playername" value="{{ handler.edit_player.name }}">
                         {% if handler.error_message != "" %}
                         <span style="color: #ff3a35">{{ handler.error_message }}</span>
                         {% end %}
                         <table class="table table-bordered">
+                        <tr>
+                            <td><strong>Name</strong></td>
+                            <td><input type="text" class="form-control" name="playername" value="{{ handler.edit_player.name }}"></td>
+                        </tr>
+                        <tr>
+                            <td>Original Name</td>
+                            <td>{{ handler.edit_player.org_name }}</td>
+                        </tr>
                         <tr>
                             <td>UUID</td>
                             <td>{{ handler.edit_player.uuid }}</td>
